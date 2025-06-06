@@ -1,0 +1,53 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGODB_URL")
+}
+
+/// Electricity provider enum
+enum Provider {
+  MEA
+  PEA
+}
+
+/// A user account (registered via email/password)
+model User {
+  /// Mongo’s ObjectId as a string
+  id           String   @id @map("_id") @default(auto()) @db.ObjectId
+  email        String   @unique
+  passwordHash String
+  provider     Provider?         // MEA or PEA (optional until they select)
+  notes        Note[]   @relation("UserNotes")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+/// Peak/off-peak schedule for a given date & provider
+model Schedule {
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  provider  Provider
+  date      DateTime                    // midnight of that calendar date
+  peakStart DateTime                    // e.g. “2025-06-07T17:00:00+07:00”
+  peakEnd   DateTime                    // e.g. “2025-06-07T20:00:00+07:00”
+
+  /// Ensure exactly one row per (date, provider)
+  @@unique([date, provider])
+}
+
+/// A user-created note (which also doubles as their “tip/reminder”)
+model Note {
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation("UserNotes", fields: [userId], references: [id])
+  content   String
+  synced    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}

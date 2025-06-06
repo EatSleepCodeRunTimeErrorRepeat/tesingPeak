@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: ./
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - db
+    environment:
+      - MONGODB_URL=${MONGODB_URL}
+      - PORT=8000
+      - JWT_SECRET=${JWT_SECRET}
+
+      
+  db:
+    image: postgres:15
+    container_name: postgres_container
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: peaksmart
+      POSTGRES_PASSWORD: test123
+      POSTGRES_DB: mydb
